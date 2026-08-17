@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import string
 import subprocess
@@ -21,6 +20,7 @@ from app.offline_media import (
     MIN_HEIGHT,
     MIN_WIDTH,
     MediaAsset,
+    publish_file_no_replace,
     sha256_file,
 )
 
@@ -371,17 +371,5 @@ def render_video(
             },
             "output": metadata,
         }
-        published = False
-        try:
-            os.replace(temporary_output, output_path)
-            published = True
-            directory_fd = os.open(output_path.parent, os.O_RDONLY)
-            try:
-                os.fsync(directory_fd)
-            finally:
-                os.close(directory_fd)
-        except Exception:
-            if published:
-                output_path.unlink(missing_ok=True)
-            raise
+        publish_file_no_replace(temporary_output, output_path)
     return result

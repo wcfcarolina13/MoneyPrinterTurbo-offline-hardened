@@ -204,6 +204,28 @@ class OfflineRenderTests(unittest.TestCase):
             },
         )
 
+    def test_render_publication_never_overwrites_a_raced_in_destination(self):
+        output = self.output_root / "sample.mp4"
+        plan = RenderPlan(slug="sample", lines=("Sample product",))
+
+        def run_process(command, **kwargs):
+            if Path(command[0]).name == "ffmpeg":
+                Path(command[-1]).write_bytes(b"rendered-video")
+                return subprocess.CompletedProcess(command, 0, "", "")
+            output.write_bytes(b"existing-video")
+            return self._output_probe(command)
+
+        with patch("app.offline_render.subprocess.run", side_effect=run_process):
+            with self.assertRaises(FileExistsError):
+                render_video(
+                    self.assets,
+                    output,
+                    plan,
+                    font_file=self.font,
+                )
+
+        self.assertEqual(output.read_bytes(), b"existing-video")
+
 
 if __name__ == "__main__":
     unittest.main()
