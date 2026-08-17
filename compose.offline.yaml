@@ -1,0 +1,45 @@
+services:
+  offline-pilot:
+    build:
+      context: .
+      dockerfile: Dockerfile.offline
+      args:
+        OFFLINE_APP_COMMIT: ${OFFLINE_APP_COMMIT:?OFFLINE_APP_COMMIT must be set}
+        OFFLINE_APP_VERSION: ${OFFLINE_APP_VERSION:?OFFLINE_APP_VERSION must be set}
+    image: moneyprinterturbo-offline-pilot:local
+    network_mode: "none"
+    read_only: true
+    user: "65532:65532"
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    mem_limit: 1g
+    cpus: 2.0
+    restart: "no"
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=128m"]
+    environment:
+      TMPDIR: /output/tmp
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - >-
+        test -r /input &&
+        test ! -w /input &&
+        test -w /output &&
+        test -w "$${TMPDIR}" &&
+        exec python -m app.offline_pilot "$$@"
+      - "--"
+    volumes:
+      - type: bind
+        source: ${OFFLINE_INPUT_DIR:?OFFLINE_INPUT_DIR must be set}
+        target: /input
+        read_only: true
+        bind:
+          create_host_path: false
+      # OFFLINE_OUTPUT_DIR and its tmp/ child must already exist and be writable by UID/GID 65532.
+      - type: bind
+        source: ${OFFLINE_OUTPUT_DIR:?OFFLINE_OUTPUT_DIR must be set}
+        target: /output
+        read_only: false
+        bind:
+          create_host_path: false

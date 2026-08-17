@@ -1,0 +1,31 @@
+FROM python:3.12-slim-bookworm@sha256:a116514e19457bcb7af7efe9c3dd0b9b71e85b317694e7882a1c52aa15a78134
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes ffmpeg fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 65532 offline \
+    && useradd --uid 65532 --gid 65532 --no-create-home --shell /usr/sbin/nologin offline
+
+ARG OFFLINE_APP_COMMIT
+ARG OFFLINE_APP_VERSION
+
+RUN test -n "$OFFLINE_APP_COMMIT" && test -n "$OFFLINE_APP_VERSION"
+
+WORKDIR /app
+
+COPY --chown=65532:65532 \
+    app/__init__.py \
+    app/offline_media.py \
+    app/offline_pilot.py \
+    app/offline_render.py \
+    ./app/
+
+ENV OFFLINE_APP_COMMIT="$OFFLINE_APP_COMMIT" \
+    OFFLINE_APP_VERSION="$OFFLINE_APP_VERSION" \
+    OFFLINE_REQUIRE_APP_COMMIT=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+USER 65532:65532
+
+ENTRYPOINT ["python", "-m", "app.offline_pilot"]
