@@ -42,3 +42,7 @@ htmlcov/
 .codegraph
 /docs/superpowers
 .understand-anything
+
+# Caller-supplied media and isolated renderer output
+/offline-input/
+/offline-output/

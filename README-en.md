@@ -18,6 +18,12 @@ English | [简体中文](README.md) | [Releases](https://github.com/harry0703/Mo
 
 </div>
 
+> [!IMPORTANT]
+> This fork adds an opt-in, security-hardened **offline editing** path for
+> caller-supplied JPG and PNG files. It does not generate media, fetch stock
+> assets, synthesize speech, or publish content. See the
+> [offline pilot guide](docs/offline-pilot.md) before using it.
+
 ## Screenshots 🖥️
 
 <h4 align="center">WebUI</h4>
