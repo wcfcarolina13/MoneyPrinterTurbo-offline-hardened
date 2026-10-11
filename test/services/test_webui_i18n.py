@@ -9,6 +9,7 @@ from app.utils import utils
 
 ROOT_DIR = Path(__file__).parent.parent.parent
 WEBUI_MAIN = ROOT_DIR / "webui" / "Main.py"
+ROOT_README = ROOT_DIR / "README.md"
 I18N_DIR = ROOT_DIR / "webui" / "i18n"
 LLM_PROVIDER_TIPS_PREFIX = "llm_provider_tips."
 TTS_PROVIDER_TIPS_PREFIX = "tts_provider_tips."
@@ -67,15 +68,48 @@ class TestWebuiI18n(unittest.TestCase):
 
         self.assertEqual(language, "de")
 
-    def test_browser_locale_is_normalized_to_supported_base_language(self):
+    def test_unsaved_ui_language_defaults_to_english(self):
         self.assertEqual(
             utils.resolve_ui_language("", "zh-CN", ["zh", "en"]),
-            "zh",
+            "en",
         )
         self.assertEqual(
             utils.resolve_ui_language(None, "pt_BR", ["en", "pt"]),
-            "pt",
+            "en",
         )
+
+    def test_default_readme_contains_no_han_characters(self):
+        readme = ROOT_README.read_text(encoding="utf-8")
+
+        self.assertIsNone(re.search(r"[\u3400-\u4dbf\u4e00-\u9fff]", readme))
+        self.assertIn("AI-generated video or photographs", readme)
+        self.assertIn("Python 3.11 or later", readme)
+
+    def test_language_selector_label_is_english(self):
+        tree = ast.parse(WEBUI_MAIN.read_text(encoding="utf-8"))
+        labels = []
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "selectbox"
+            ):
+                continue
+            widget_key = next(
+                (
+                    keyword.value.value
+                    for keyword in node.keywords
+                    if keyword.arg == "key"
+                    and isinstance(keyword.value, ast.Constant)
+                ),
+                None,
+            )
+            if widget_key == "top_language_code_selector":
+                labels.append(ast.literal_eval(node.args[0]))
+
+        self.assertEqual(labels, ["Language"])
 
     def test_unsupported_browser_locale_falls_back_to_english(self):
         language = utils.resolve_ui_language(
