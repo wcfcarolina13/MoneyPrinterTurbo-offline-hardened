@@ -309,11 +309,11 @@ def resolve_ui_language(
     default_language: str = "en",
 ) -> str:
     """
-    按“已保存设置、浏览器语言、默认语言”的优先级选择界面语言。
+    Choose the saved UI language when valid, otherwise use English.
 
-    浏览器通常返回带地区的 locale，例如 ``zh-CN``、``pt-BR``。语言文件使用
-    ``zh``、``pt`` 这类基础代码，因此先尝试完整匹配，再回退到连字符前的语言
-    代码。函数保持纯逻辑，避免把浏览器上下文和配置写入耦合到工具层，便于测试。
+    ``browser_locale`` remains in the signature for callers that already provide it,
+    but this English-first fork deliberately does not change its initial language from
+    browser preferences. Users can still select and save any bundled locale.
     """
     supported = [str(language).strip() for language in supported_languages]
     supported_by_lower = {
@@ -332,10 +332,6 @@ def resolve_ui_language(
     saved_match = match_language(saved_language)
     if saved_match:
         return saved_match
-
-    browser_match = match_language(browser_locale)
-    if browser_match:
-        return browser_match
 
     default_match = match_language(default_language)
     if default_match:
